@@ -19,7 +19,7 @@
 "Move Tendedero to the Applications folder and try again." = "Placez Tendedero dans le dossier Applications, puis réessayez.";
 "Keep on line" = "Garder sur la corde";
 "As many as fit" = "Autant qu’il en tient";
-"%d photos" = "%d photos";
+"%d items" = "%d éléments";
 "Also watch folders" = "Surveiller aussi des dossiers";
 "Add Folder…" = "Ajouter un dossier…";
 "Stop Watching" = "Ne plus surveiller";
@@ -62,3 +62,9 @@
 
 /* PeggedView */
 "Copied" = "Copié";
+
+/* Plain-text clippings */
+"Hang copied text" = "Accrocher le texte copié";
+"Text you copy is saved on this Mac until you take it down" = "Le texte copié reste sur ce Mac jusqu’à ce qu’il soit décroché";
+"Tendedero, hanging copied text" = "Tendedero, texte copié accroché";
+"Tendedero, hanging copied images and text" = "Tendedero, images et texte copiés accrochés";

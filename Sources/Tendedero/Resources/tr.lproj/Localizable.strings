@@ -19,7 +19,7 @@
 "Move Tendedero to the Applications folder and try again." = "Tendedero'yu Uygulamalar klasörüne taşıyın ve tekrar deneyin.";
 "Keep on line" = "İpte tut";
 "As many as fit" = "Sığdığı kadar";
-"%d photos" = "%d fotoğraf";
+"%d items" = "%d öğe";
 "Also watch folders" = "Klasörleri de izle";
 "Add Folder…" = "Klasör ekle…";
 "Stop Watching" = "İzlemeyi durdur";
@@ -62,3 +62,9 @@
 
 /* PeggedView */
 "Copied" = "Kopyalandı";
+
+/* Plain-text clippings */
+"Hang copied text" = "Kopyalanan metni as";
+"Text you copy is saved on this Mac until you take it down" = "Kopyaladığınız metin, indirilene kadar bu Mac’te saklanır";
+"Tendedero, hanging copied text" = "Tendedero, kopyalanan metin asılıyor";
+"Tendedero, hanging copied images and text" = "Tendedero, kopyalanan görseller ve metin asılıyor";

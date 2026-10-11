@@ -21,7 +21,7 @@
 "Move Tendedero to the Applications folder and try again." = "Move Tendedero to the Applications folder and try again.";
 "Keep on line" = "Keep on line";
 "As many as fit" = "As many as fit";
-"%d photos" = "%d photos";
+"%d items" = "%d items";
 "Also watch folders" = "Also watch folders";
 "Add Folder…" = "Add Folder…";
 "Stop Watching" = "Stop Watching";
@@ -64,3 +64,9 @@
 
 /* PeggedView */
 "Copied" = "Copied";
+
+/* Plain-text clippings */
+"Hang copied text" = "Hang copied text";
+"Text you copy is saved on this Mac until you take it down" = "Text you copy is saved on this Mac until you take it down";
+"Tendedero, hanging copied text" = "Tendedero, hanging copied text";
+"Tendedero, hanging copied images and text" = "Tendedero, hanging copied images and text";

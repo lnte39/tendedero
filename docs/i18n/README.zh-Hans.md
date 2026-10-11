@@ -1,3 +1,6 @@
+> 此 fork 新增默认关闭的纯文字剪贴板卡片。请按下方“从源码构建”生成
+> **Textline Preview**，它使用独立名称、图标、设置和保存目录；下方截图来自原版。
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../images/zh-Hans/hero-dark.png">
   <img src="../images/zh-Hans/hero-light.png" alt="Tendedero。截图挂起来晾着。三张截图装在玻璃相框里，挂在 macOS 菜单栏下方的一根细绳上。">
@@ -83,7 +86,9 @@ Tendedero 完全在你的 Mac 上运行，截图不会离开这台电脑。
 
 <br>
 
-## 技术规格
+## 原版技术规格
+
+本 fork 的预览版按本机架构构建，目前只在 Apple silicon 上验证。
 
 | | |
 |:--|:--|
@@ -97,9 +102,11 @@ Tendedero 完全在你的 Mac 上运行，截图不会离开这台电脑。
 
 <br>
 
-## 安装
+## 安装原版
 
-从[最新发布](../../../../releases/latest)下载磁盘映像，打开后把 Tendedero 拖进「应用程序」。也可以用 Homebrew 安装：
+原版发布不包含此 fork 的文字支持；此 fork 请按下方步骤从源码构建。
+
+从[最新发布](https://github.com/alejandrobujan/tendedero/releases/latest)下载磁盘映像，打开后把 Tendedero 拖进「应用程序」。也可以用 Homebrew 安装：
 
 ```sh
 brew install --cask alejandrobujan/tap/tendedero
@@ -112,13 +119,13 @@ Tendedero 已使用 Developer ID 签名并通过 Apple 公证，打开方式和�
 ## 从源码构建
 
 ```sh
-git clone git@github.com:alejandrobujan/tendedero.git
+git clone https://github.com/lnte39/tendedero.git
 cd tendedero
-scripts/build-app.sh
-open build/Tendedero.app
+bash scripts/build-preview.sh "$PWD/build"
+open "build/Textline Preview.app"
 ```
 
-需要 Swift 工具链，Xcode 可选。若使用 macOS 27 的命令行工具，脚本会回退到随其一同安装的 macOS 26 SDK，因为新版 SDK 需要只有 Xcode 才带的 SwiftUI 宏插件。本地构建采用 ad-hoc 签名，所以每次重新构建后 macOS 都会再次询问桌面访问权限。
+需要 macOS 14 或以上及兼容的 Swift 工具链/SDK，Xcode 可选。预览版按本机架构构建，采用本地 ad-hoc 签名，未做公证。剪贴板监测默认关闭，脚本拒绝覆盖已有输出应用。修改版请使用此预览脚本；上游的 `build-app.sh` 仍使用原版名称和图标。
 
 <details>
 <summary>应用内部</summary>
@@ -166,3 +173,24 @@ open build/Tendedero.app
   <br>
   <sub>由 <a href="https://alejandrobujan.com">Alejandro Buján</a> 设计与开发。</sub>
 </p>
+
+
+## 此 fork 新增：复制文字
+
+在菜单栏开启 **挂上复制的文字** 后，新复制的文字会挂到晾衣绳上。
+它默认关闭，与图片开关相互独立；开启时不会导入剪贴板中已有的内容。
+
+- 单击卡片复制完整原文，保留中文、emoji、空格和换行；卡片只显示摘要。
+- 长按或用力点按可快速查看，双击用默认文本编辑器打开；拖动传递的是 `.txt` 文件。
+- 文字与截图共用保留数量，重启后恢复。关闭文字开关只停止接收，不删除已有条目。
+- 富文本仅保留纯文字。文件复制、标记为私密/临时/自动生成的内容、多条目复制、空字符串、含 NUL 的文本和超过 1 MiB UTF-8 的文本会跳过；没有 OCR。
+- 文字只保存在本机，文件仅当前用户可读，文件名和日志不含正文。丢弃或超出保留数量的条目进入废纸篓，清空废纸篓前仍可恢复。未标记的敏感文字也可能被接收，需要时请关闭此开关。
+
+`bash scripts/check-text.sh` 仅使用合成内容、独立测试剪贴板、临时文件和独立偏好设置，不启动应用、不读取通用剪贴板。本次改动不包含 Windows 支持。
+
+### 独立本机验收包
+
+此 fork 可用 `bash scripts/build-preview.sh /绝对路径/输出目录` 打包
+**Textline Preview.app**。它使用独立名称、原创图标、设置域和保存目录，
+两个剪贴板开关默认关闭，且拒绝覆盖已有输出应用。请查看
+[验收步骤](../textline-preview.md)和[验证报告](../text-support-validation.md)。

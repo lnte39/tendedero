@@ -19,7 +19,7 @@
 "Move Tendedero to the Applications folder and try again." = "Tendederoを「アプリケーション」フォルダに移動してから、もう一度お試しください。";
 "Keep on line" = "ロープに残す数";
 "As many as fit" = "収まるだけ";
-"%d photos" = "%d枚";
+"%d items" = "%d項目";
 "Also watch folders" = "フォルダも監視";
 "Add Folder…" = "フォルダを追加…";
 "Stop Watching" = "監視を停止";
@@ -62,3 +62,9 @@
 
 /* PeggedView */
 "Copied" = "コピーしました";
+
+/* Plain-text clippings */
+"Hang copied text" = "コピーしたテキストを掛ける";
+"Text you copy is saved on this Mac until you take it down" = "コピーしたテキストは取り外すまでこのMacに保存されます";
+"Tendedero, hanging copied text" = "Tendedero、コピーしたテキストを掛けています";
+"Tendedero, hanging copied images and text" = "Tendedero、コピーした画像とテキストを掛けています";

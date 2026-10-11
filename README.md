@@ -1,3 +1,7 @@
+> This fork adds opt-in plain-text clipboard cards. Build **Textline Preview**
+> using the [fork build steps](#build-from-source); it has its own name, icon,
+> settings and storage. The screenshots below show the upstream app.
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/hero-dark.png">
   <img src="docs/images/hero-light.png" alt="Tendedero. Screenshots, hung out to dry. Three screenshots in glass frames hang from a thin line under the macOS menu bar.">
@@ -78,6 +82,33 @@ left alone.
 
 <br>
 
+## Plain text in this fork
+
+Turn on **Hang copied text** in the menu bar to keep new copied text on the
+line. This switch is off by default and is independent of **Hang copied
+images**. Enabling it never imports what is already on the clipboard.
+
+- Click a text card to copy its complete plain text, including whitespace,
+  line breaks, Unicode and emoji. Only the card preview is shortened.
+- Long press or force click to Quick Look; double click to open the `.txt`
+  file in your default text editor. Dragging shares or moves that file using
+  the existing file gestures. Text does not offer image Markup.
+- Text shares the line's capacity and restart persistence with screenshots.
+  Turning the switch off stops capture; it does not erase existing cards.
+- The plain representation of rich text is accepted; formatting is not
+  retained. File copies, private/temporary/automatically generated copies,
+  multiple-item text copies, empty text, NUL-containing text and text over
+  1 MiB in UTF-8 are skipped. There is no OCR.
+- Text is stored locally as owner-only UTF-8 files in the app's inbox.
+  Text content is never put in filenames or logs. As with screenshots,
+  discarded or expired inbox items go to the Trash, which retains them
+  until you empty it. Unmarked sensitive text can still be captured;
+  keep the switch off when copying content you do not want saved.
+
+Development tests: `bash scripts/check-text.sh` uses only synthetic content, private named
+pasteboards, temporary files and isolated preferences. It does not launch
+the app or inspect the general clipboard. Windows is not supported by this change.
+
 ## Private by design.
 
 No account. No network. No analytics.
@@ -85,7 +116,9 @@ Tendedero runs entirely on your Mac, and your screenshots never leave it.
 
 <br>
 
-## Tech Specs
+## Upstream Tech Specs
+
+The preview is built for the host architecture and has been verified on Apple silicon.
 
 | | |
 |:--|:--|
@@ -99,9 +132,12 @@ Tendedero runs entirely on your Mac, and your screenshots never leave it.
 
 <br>
 
-## Install
+## Install the upstream app
 
-Download the disk image from the [latest release](../../releases/latest),
+The upstream release does not include this fork's text support. For the fork,
+use the source build below.
+
+Download the upstream disk image from the [latest release](https://github.com/alejandrobujan/tendedero/releases/latest),
 open it and drag Tendedero to Applications. Or install it with Homebrew:
 
 ```sh
@@ -116,14 +152,21 @@ like any other app.
 ## Build from source
 
 ```sh
-git clone git@github.com:alejandrobujan/tendedero.git
+git clone https://github.com/lnte39/tendedero.git
 cd tendedero
-scripts/build-app.sh
-open build/Tendedero.app
+bash scripts/build-preview.sh "$PWD/build"
+open "build/Textline Preview.app"
 ```
 
-Requires the Swift toolchain. Xcode is optional. With the Command Line Tools for macOS 27, the script falls back to the macOS 26 SDK they install alongside, because the new SDK needs a SwiftUI macro plugin only Xcode includes. Local builds are signed ad hoc,
-so macOS asks again for access to the Desktop after each rebuild.
+Requires macOS 14 or later and a compatible Swift toolchain/SDK. Xcode is
+optional. The preview is built for the host architecture and signed locally
+ad hoc, without a Developer ID or notarization. It starts with clipboard
+monitoring off and refuses to replace an existing output app. See the
+[acceptance steps](docs/textline-preview.md) and
+[validation commands](docs/text-support-validation.md).
+
+Use this preview script for modified builds: the unchanged upstream
+`build-app.sh` still uses the upstream name and icon.
 
 <details>
 <summary>Inside the app</summary>
@@ -137,7 +180,9 @@ so macOS asks again for access to the Desktop after each rebuild.
 | `PeggedView.swift` | One photo: glass frame, clip, swing and breeze |
 | `GrabArea.swift` | Click, long press, drag and drop |
 | `ScreenshotWatcher.swift` | Notices new screenshots |
-| `ClipboardWatcher.swift` | Notices images copied to the clipboard |
+| `ClipboardWatcher.swift` | Notices opt-in image and plain-text clipboard copies |
+| `TextClipping.swift` | Stores, previews and copies exact UTF-8 text |
+| `AppIdentity.swift` | Keeps the preview name and storage separate |
 | `Inbox.swift` | Takes over screenshot settings and puts them back |
 | `Markup.swift` | Opens the system Markup editor and saves the result |
 | `Trim.swift` | Trims a screen recording and saves the result |

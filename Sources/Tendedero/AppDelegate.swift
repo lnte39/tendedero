@@ -74,7 +74,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         restoreSettingsOnTermination()
         startWatcher()
         clipboardWatcher = ClipboardWatcher { [weak self] url in self?.hangCapture(url) }
-        if ClipboardWatcher.isEnabled { clipboardWatcher.start() }
+        clipboardWatcher.start(images: ClipboardWatcher.isEnabled, text: ClipboardWatcher.isTextEnabled)
 
         registerShortcut()
 
@@ -119,7 +119,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             }
         }
 
-        if !Inbox.wasOffered {
+        if !AppIdentity.isPreview && !Inbox.wasOffered {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in self?.offerInbox() }
         }
 
@@ -148,7 +148,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         watcher?.stop()
         safetyWatcher?.stop()
         safetyWatcher = nil
+        // The local preview starts in its own folder, without inspecting the
+        // user's screenshot location or asking to change screenshot settings.
+        if AppIdentity.isPreview {
+            try? FileManager.default.createDirectory(at: Inbox.folder, withIntermediateDirectories: true,
+                                                     attributes: [.posixPermissions: 0o700])
+        }
         watcher = ScreenshotWatcher(
+            folder: AppIdentity.isPreview ? Inbox.folder : nil,
             onNew: { [weak self] url in self?.hangCapture(url) },
             onChange: { [weak self] in self?.line.prune() })
         watcher.start()
@@ -232,7 +239,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     /// Watching the clipboard is opt in, from the menu bar only.
     private func setClipboard(_ on: Bool) {
         ClipboardWatcher.isEnabled = on
-        if on { clipboardWatcher.start() } else { clipboardWatcher.stop() }
+        clipboardWatcher.start(images: on, text: ClipboardWatcher.isTextEnabled)
+        updateStatusIcon()
+    }
+
+    private func setTextClipboard(_ on: Bool) {
+        ClipboardWatcher.isTextEnabled = on
+        clipboardWatcher.start(images: ClipboardWatcher.isEnabled, text: on)
         updateStatusIcon()
     }
 
@@ -616,9 +629,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     /// The shirt fills in while copied images are hung, so it shows at a
     /// glance that the clipboard is being watched.
     private func updateStatusIcon() {
-        let on = ClipboardWatcher.isEnabled
-        let description = on ? L("Tendedero, hanging copied images") : "Tendedero"
-        let image = NSImage(systemSymbolName: on ? "tshirt.fill" : "tshirt", accessibilityDescription: description)
+        let on = ClipboardWatcher.isEnabled || ClipboardWatcher.isTextEnabled
+        let description: String
+        if ClipboardWatcher.isTextEnabled {
+            description = ClipboardWatcher.isEnabled
+                ? L("Tendedero, hanging copied images and text") : L("Tendedero, hanging copied text")
+        } else {
+            description = on ? L("Tendedero, hanging copied images") : AppIdentity.name
+        }
+        let symbol = AppIdentity.isPreview ? (on ? "text.bubble.fill" : "text.bubble")
+            : (on ? "tshirt.fill" : "tshirt")
+        let image = NSImage(systemSymbolName: symbol, accessibilityDescription: description)
         image?.isTemplate = true
         statusItem.button?.image = image
         statusItem.button?.toolTip = description
@@ -655,6 +676,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         clipboard.state = ClipboardWatcher.isEnabled ? .on : .off
         clipboard.toolTip = L("Images you copy hang on the line too")
         menu.addItem(clipboard)
+
+        let textClipboard = ClosureMenuItem(L("Hang copied text")) { [weak self] in
+            self?.setTextClipboard(!ClipboardWatcher.isTextEnabled)
+        }
+        textClipboard.state = ClipboardWatcher.isTextEnabled ? .on : .off
+        textClipboard.toolTip = L("Text you copy is saved on this Mac until you take it down")
+        menu.addItem(textClipboard)
 
         let bringDown = NSMenuItem(title: L("Bring the line down"), action: nil, keyEquivalent: "")
         let options = NSMenu()
@@ -713,7 +741,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         fit.state = Line.keepOnLine == nil ? .on : .off
         keeps.addItem(fit)
         for n in Line.keepChoices {
-            let item = ClosureMenuItem(String(format: L("%d photos"), n)) { [weak self] in self?.setKeep(n) }
+            let item = ClosureMenuItem(String(format: L("%d items"), n)) { [weak self] in self?.setKeep(n) }
             item.state = Line.keepOnLine == n ? .on : .off
             keeps.addItem(item)
         }
@@ -775,6 +803,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     /// tendedero.app with the running version, and the menus' language when
     /// the website has it too, so the page answers in the same words.
     private static var updatesURL: URL {
+        if AppIdentity.isPreview { return URL(string: "https://github.com/lnte39/tendedero")! }
         var components = URLComponents(string: "https://tendedero.app/")!
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
         var query = [URLQueryItem(name: "update", value: version)]

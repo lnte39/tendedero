@@ -3,9 +3,9 @@ import AVFoundation
 import Combine
 import os
 
-let log = Logger(subsystem: "app.tendedero.Tendedero", category: "line")
+let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "app.tendedero.Tendedero", category: "line")
 
-/// One screenshot hanging on the line.
+/// One screenshot, recording or plain-text clipping hanging on the line.
 struct Pegged: Identifiable, Equatable {
     let id = UUID()
     let url: URL
@@ -17,6 +17,7 @@ struct Pegged: Identifiable, Equatable {
     var flying = false
     /// A screen recording rather than a screenshot.
     var isRecording: Bool { Tendedero.isRecording(url) }
+    var isText: Bool { TextClipping.isText(url) }
 
     static func == (a: Pegged, b: Pegged) -> Bool {
         a.id == b.id && a.falling == b.falling && a.flying == b.flying && a.thumb === b.thumb
@@ -60,17 +61,21 @@ final class Line: ObservableObject {
 
 
     var soundOn: Bool {
-        get { !UserDefaults.standard.bool(forKey: "soundOff") }
-        set { UserDefaults.standard.set(!newValue, forKey: "soundOff") }
+        get { !defaults.bool(forKey: "soundOff") }
+        set { defaults.set(!newValue, forKey: "soundOff") }
     }
 
     var liveCount: Int { items.filter { !$0.falling }.count }
 
     private let storeKey = "pegged"
+    private let defaults: UserDefaults
+    private let inboxFolder: URL
 
-    init() {
+    init(defaults: UserDefaults = .standard, inboxFolder: URL = Inbox.folder, breeze: Bool = true) {
+        self.defaults = defaults
+        self.inboxFolder = inboxFolder
         restore()
-        scheduleGust()
+        if breeze { scheduleGust() }
     }
 
     // MARK: Hanging and dropping
@@ -153,15 +158,21 @@ final class Line: ObservableObject {
 
     // MARK: Actions on one photo
 
-    func copy(_ id: UUID) {
-        guard let item = items.first(where: { $0.id == id }) else { return }
-        let entry = NSPasteboardItem()
-        // A recording is copied as the file, which apps paste as the video.
-        if !item.isRecording, let png = pngData(item.url) { entry.setData(png, forType: .png) }
-        entry.setString(item.url.absoluteString, forType: .fileURL)
-        let pb = NSPasteboard.general
+    func copy(_ id: UUID, to pb: NSPasteboard = .general) {
+        guard let item = items.first(where: { $0.id == id && !$0.falling }) else { return }
+        let entry: NSPasteboardItem
+        if item.isText {
+            // A failed read must not clear the clipboard or report success.
+            guard let text = TextClipping.pasteboardItem(for: item.url) else { return }
+            entry = text
+        } else {
+            entry = NSPasteboardItem()
+            // A recording is copied as the file, which apps paste as the video.
+            if !item.isRecording, let png = pngData(item.url) { entry.setData(png, forType: .png) }
+            entry.setString(item.url.absoluteString, forType: .fileURL)
+        }
         pb.clearContents()
-        pb.writeObjects([entry])
+        guard pb.writeObjects([entry]) else { return }
 
         copiedID = id
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
@@ -202,7 +213,7 @@ final class Line: ObservableObject {
     /// Files anywhere else, like the Desktop, stay where they are.
     func isInInbox(_ id: UUID) -> Bool {
         guard let item = items.first(where: { $0.id == id }) else { return false }
-        return item.url.standardizedFileURL.path.hasPrefix(Inbox.folder.standardizedFileURL.path + "/")
+        return item.url.standardizedFileURL.path.hasPrefix(inboxFolder.standardizedFileURL.path + "/")
     }
 
     /// The corner cross and "Take down" both end up here.
@@ -264,7 +275,9 @@ final class Line: ObservableObject {
     /// not edit video, so a recording opens in the trimming editor instead.
     func markup(_ id: UUID) {
         guard let item = items.first(where: { $0.id == id }) else { return }
-        if item.isRecording {
+        if item.isText {
+            quickLook(id)
+        } else if item.isRecording {
             Trim.shared.edit(item.url, size: item.thumb.size)
         } else {
             Markup.shared.edit(item.url)
@@ -313,14 +326,14 @@ final class Line: ObservableObject {
 
     private func save() {
         let paths = items.filter { !$0.falling }.map(\.url.path)
-        UserDefaults.standard.set(paths, forKey: storeKey)
+        defaults.set(paths, forKey: storeKey)
     }
 
     /// Everything comes back as it was. This runs before the line knows its
     /// screen, so the capacity is still the default one: hanging through
     /// `hang` would let photos fall off a wide screen's line at every launch.
     private func restore() {
-        let paths = UserDefaults.standard.stringArray(forKey: storeKey) ?? []
+        let paths = defaults.stringArray(forKey: storeKey) ?? []
         for path in paths where FileManager.default.fileExists(atPath: path) {
             let url = URL(fileURLWithPath: path)
             guard !items.contains(where: { $0.url == url }), let thumb = makeThumbnail(url) else { continue }
@@ -352,6 +365,7 @@ func isRecording(_ url: URL) -> Bool {
 /// The default size covers a card at twice its size in points, as on a
 /// Retina screen, and no more: every photo on the line keeps one in memory.
 func makeThumbnail(_ url: URL, maxPixels: Int = Int(320 * Layout.size.scale)) -> NSImage? {
+    if TextClipping.isText(url) { return TextClipping.thumbnail(url, maxPixels: maxPixels) }
     if isRecording(url) { return firstFrame(url, maxPixels: maxPixels) }
     guard let source = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
     let options: [CFString: Any] = [

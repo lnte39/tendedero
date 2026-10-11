@@ -19,7 +19,7 @@
 "Move Tendedero to the Applications folder and try again." = "请先把 Tendedero 移到「应用程序」文件夹，再试一次。";
 "Keep on line" = "绳上保留";
 "As many as fit" = "放得下的数量";
-"%d photos" = "%d 张";
+"%d items" = "%d 项";
 "Also watch folders" = "同时监视文件夹";
 "Add Folder…" = "添加文件夹…";
 "Stop Watching" = "停止监视";
@@ -62,3 +62,9 @@
 
 /* PeggedView */
 "Copied" = "已复制";
+
+/* Plain-text clippings */
+"Hang copied text" = "挂上复制的文字";
+"Text you copy is saved on this Mac until you take it down" = "复制的文字会保存在这台 Mac 上，直到被取下";
+"Tendedero, hanging copied text" = "Tendedero，正在挂上复制的文字";
+"Tendedero, hanging copied images and text" = "Tendedero，正在挂上复制的图片和文字";
